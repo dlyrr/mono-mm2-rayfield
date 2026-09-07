@@ -14784,7 +14784,7 @@ local function MakeMonoUI(Rayfield)
 
     -- Ordered after the feature categories (which default to 0) but before
     -- Rayfield's own settings tab (1000).
-    local PAGE_ORDER = { Players = 900, Server = 901 }
+    local PAGE_ORDER = { Keybinds = 899, Players = 900, Server = 901 }
 
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
@@ -15040,6 +15040,8 @@ local function MakeMonoUI(Rayfield)
             bind = opts.Bind,
             state = opts.Default and true or false,
             callback = opts.Callback,
+            action = opts.Action and true or false,
+            hold = opts.Hold and true or false,
             category = cat,
             ui = self,
             settings = {},
@@ -15077,20 +15079,9 @@ local function MakeMonoUI(Rayfield)
             })
         end
 
-        if opts.Bind ~= nil then
-            m.keybind = tab:CreateKeybind({
-                Name = words(m.name) .. " (bind)",
-                Value = opts.Bind,
-                Flag = flagFor(cat.name, m.name, "bind"),
-                Hold = opts.Hold,
-                Callback = function()
-                    m:Toggle()
-                end,
-                OnChanged = function(k)
-                    m.bind = k
-                end,
-            })
-        end
+        -- Binds are not created here. In MonoUI any module can be bound at runtime
+        -- from its row, so every module gets a keybind on the Keybinds page once
+        -- they all exist; opts.Bind becomes that keybind's default.
 
         function m:Get()
             return self.state
@@ -15239,7 +15230,56 @@ local function MakeMonoUI(Rayfield)
         })
     end
 
+    -- MonoUI puts a bindable chip on every module row. Rayfield rows have no such
+    -- slot, and a keybind under all 49 toggles would bury the features, so the
+    -- binds are collected onto one page. Built from Present() because that is the
+    -- last thing the feature code calls, by which point every module exists.
+    function MonoUI:_buildKeybindsPage()
+        if self.pageKeybinds or #self.allModules == 0 then
+            return
+        end
+        local tab = self.window:CreateTab({ Name = "Keybinds", CustomOrder = PAGE_ORDER.Keybinds })
+        self.pageKeybinds = tab
+
+        tab:CreateText({
+            Name = "Binds",
+            Text = "Set a key against any feature to toggle it without opening the menu."
+                .. " Click a key to rebind, right-click to clear.",
+        })
+
+        local currentCategory
+        for _, m in self.allModules do
+            if m.category ~= currentCategory then
+                currentCategory = m.category
+                tab:CreateSection({ Name = currentCategory.name })
+            end
+
+            m.keybind = tab:CreateKeybind({
+                Name = words(m.name),
+                Value = m.bind,
+                Hold = m.hold,
+                Flag = flagFor(m.category.name, m.name, "bind"),
+                Callback = function(v)
+                    if m.action then
+                        if m.callback then
+                            m.callback(true)
+                        end
+                    elseif m.hold then
+                        -- a Hold keybind reports true on press and false on release
+                        m:Toggle(v == true)
+                    else
+                        m:Toggle()
+                    end
+                end,
+                OnChanged = function(k)
+                    m.bind = k
+                end,
+            })
+        end
+    end
+
     function MonoUI:Present()
+        self:_buildKeybindsPage()
         self.window:Show()
     end
 

@@ -41,6 +41,18 @@ Two details that matter:
   key the adapter does not implement (`SetSmoothScroll`, `ToggleFullscreen`), so
   cosmetic calls cannot crash the script. Lowercase field reads behave normally.
 
+## Keybinds
+
+MonoUI puts a bindable chip on every module row, so any feature can be bound at
+runtime. Rayfield rows have no such slot, and a keybind under all 49 toggles would
+bury the features, so the binds are collected onto one **Keybinds** page: a
+section per category, one key per feature.
+
+Binding a toggle flips it; a `Hold` feature such as Aimbot is active only while the
+key is down; an `Action` feature fires. Binds are saved with the rest of the config.
+The page is built from `Present()`, the last call the feature code makes, because
+only then does every module exist.
+
 ## Players and Server pages
 
 MonoUI builds these itself, so they are rebuilt on Rayfield elements:

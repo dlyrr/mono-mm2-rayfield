@@ -67,9 +67,12 @@ io.open('mono-rayfield.luau', 'w', encoding='utf-8').write(out)
 
 # split halves, purely so the pieces fit under the test harness transport cap
 L = out.split('\n')
-i = [k for k, l in enumerate(L) if l.strip() == 'end)()'][0]
+i = [k for k, l in enumerate(L) if l == 'end)()'][0]   # column 0 = the outer IIFE, not a nested one
+p1 = L[:i]
+while p1 and p1[-1].strip() in ('', 'return require(Rayfield)'):
+    p1.pop()                                    # drop the IIFE's own return
 io.open('part1_rayfield.luau', 'w', encoding='utf-8').write(
-    '\n'.join(L[:i]).replace('local Rayfield = (function()', 'do', 1)
+    '\n'.join(p1).replace('local Rayfield = (function()', 'do', 1)
     + '\ngetgenv().__RF_GEN2 = require(Rayfield)\nend\n')
 io.open('part2_mono.luau', 'w', encoding='utf-8').write(
     'local Rayfield = getgenv().__RF_GEN2\n' + '\n'.join(L[i + 1:]))
