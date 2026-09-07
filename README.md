@@ -114,6 +114,14 @@ that produced it are in `src/`:
 | --- | --- |
 | `deobf.py` | splits the bundle into modules using its own manifest |
 | `pass2.py` | renames mangled locals (class tables, requires, `self`) |
+
+`pass2.py` is scope-blind by design, so a rename has to be all-or-nothing. It
+decides whether `name =` is a table key from the preceding code character, which
+is `{` or `,` for a real key because stylua puts a comma after every entry. An
+assignment inside a function nested in a constructor follows `)` or `end` and must
+still be renamed; getting that backwards silently redirects the assignment to a
+global while its declaration is renamed, which is a bug that compiles and runs.
+The build fails if any rename is left half-applied.
 | `bundle.py` | re-bundles the tree into one loadable file |
 | `build.py` | assembles Rayfield + adapter + feature code into `Script.luau` |
 

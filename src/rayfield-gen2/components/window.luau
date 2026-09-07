@@ -1263,7 +1263,7 @@ function h._buildSettingsUI(self)
             value = default,
             placeholder = "No saved configurations",
             callback = function(N)
-                J = N
+                default = N
             end,
         })
         L = self.rfSettings:CreateInput({
@@ -1287,7 +1287,7 @@ function h._buildSettingsUI(self)
                 end
                 if self:Save(O) then
                     L:Set("")
-                    J = O
+                    default = O
                     M()
                     self:Toast({
                         title = locale.resolve("Saved configuration"),
