@@ -173,16 +173,13 @@ end
 
 function Popup._buildHeader(self, O, P)
     local Q = self.window
-    local R = Q:Create(
-        "Frame",
-        {
-            Name = "Header",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, P),
-            LayoutOrder = 1,
-            Parent = self.card,
-        }
-    )
+    local R = Q:Create("Frame", {
+        Name = "Header",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, P),
+        LayoutOrder = 1,
+        Parent = self.card,
+    })
     Q:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         VerticalAlignment = Enum.VerticalAlignment.Center,
@@ -362,15 +359,12 @@ function Popup._buildBox(self, O, P, Q)
             0
         )
     end
-    local Z = R:Create(
-        "Frame",
-        {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, S and -(y + z) or 0, 0, W),
-            LayoutOrder = 2,
-            Parent = X,
-        }
-    )
+    local Z = R:Create("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, S and -(y + z) or 0, 0, W),
+        LayoutOrder = 2,
+        Parent = X,
+    })
     R:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -415,16 +409,13 @@ end
 
 function Popup._buildFooter(self)
     local O = self.window
-    local P = O:Create(
-        "Frame",
-        {
-            Name = "Footer",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, E),
-            LayoutOrder = 3,
-            Parent = self.card,
-        }
-    )
+    local P = O:Create("Frame", {
+        Name = "Footer",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, E),
+        LayoutOrder = 3,
+        Parent = self.card,
+    })
     O:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         VerticalAlignment = Enum.VerticalAlignment.Center,

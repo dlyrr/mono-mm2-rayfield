@@ -261,32 +261,25 @@ function h.new(I)
         Parent = L.main,
     })
     L.bottomFadeCorner = L:_roundCorners(L.bottomFade, L.layout.fadeCorners)
-    L.bottomFadeGradient = L:Create(
-        "UIGradient",
-        {
-            Rotation = 270,
-            Offset = Vector2.new(0, 0.2),
-            Transparency = L.layout.fadeTransparency,
-            Parent = L.bottomFade,
+    L.bottomFadeGradient = L:Create("UIGradient", {
+        Rotation = 270,
+        Offset = Vector2.new(0, 0.2),
+        Transparency = L.layout.fadeTransparency,
+        Parent = L.bottomFade,
+    }, {
+        Color = {
+            "WindowColor",
+            function(M)
+                return ColorSequence.new(functions.toColorSequence(M).Keypoints[1].Value)
+            end,
         },
-        {
-            Color = {
-                "WindowColor",
-                function(M)
-                    return ColorSequence.new(functions.toColorSequence(M).Keypoints[1].Value)
-                end,
-            },
-        }
-    )
-    L.topbar = L:Create(
-        "Frame",
-        {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, L.layout.topbarHeight),
-            Active = true,
-            Parent = L.main,
-        }
-    )
+    })
+    L.topbar = L:Create("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, L.layout.topbarHeight),
+        Active = true,
+        Parent = L.main,
+    })
     L.topContainer = L:Create("Frame", {
         Size = UDim2.new(0, 300, 0, 24),
         Position = UDim2.new(0, 25, 0.5, 0),
@@ -1245,7 +1238,7 @@ function h._buildSettingsUI(self)
     })
     if next(self.configuration) ~= nil then
         self.rfSettings:CreateSection({ name = "Configurations" })
-        local default, K, L = self:ListConfigs()[1]
+        local default, K, L, autoPin = self:ListConfigs()[1]
         local function M()
             local N = self:ListConfigs()
             K:Refresh(N)
@@ -1264,6 +1257,24 @@ function h._buildSettingsUI(self)
             placeholder = "No saved configurations",
             callback = function(N)
                 default = N
+                if autoPin then
+                    autoPin:Set(self.settings.autoloadConfig == N, true)
+                end
+            end,
+        })
+        autoPin = self.rfSettings:CreateToggle({
+            name = "Load this configuration on start",
+            description = [[Applies the selected configuration every time the script runs,]]
+                .. [[ instead of restoring whatever was last in use.]],
+            value = self.settings.autoloadConfig ~= nil and self.settings.autoloadConfig == default,
+            forgetState = true,
+            callback = function(on)
+                if on and default and default ~= "" then
+                    self.settings.autoloadConfig = default
+                else
+                    self.settings.autoloadConfig = nil
+                end
+                self:SaveSettings()
             end,
         })
         L = self.rfSettings:CreateInput({
@@ -1328,6 +1339,10 @@ function h._buildSettingsUI(self)
                     return
                 end
                 if self:DeleteConfig(O) then
+                    if self.settings.autoloadConfig == O then
+                        self.settings.autoloadConfig = nil
+                        self:SaveSettings()
+                    end
                     M()
                     self:Toast({ title = locale.resolve("Deleted configuration"), subtitle = O })
                 else
@@ -1499,7 +1514,15 @@ function h.Show(self)
     self._revealing = true
     if self.configuration.autoLoad and not self._autoLoaded then
         self._autoLoaded = true
-        local default, K = pcall(self.Load, self)
+        -- A pinned configuration wins over the default file. If it has been
+        -- deleted since, fall back rather than starting with nothing applied.
+        local pinned = self.settings.autoloadConfig
+        if pinned and not table.find(self:ListConfigs(), pinned) then
+            pinned = nil
+            self.settings.autoloadConfig = nil
+            self:SaveSettings()
+        end
+        local default, K = pcall(self.Load, self, pinned)
         if not default then
             log.warn("Rayfield: Failed to load configuration - " .. tostring(K))
         end

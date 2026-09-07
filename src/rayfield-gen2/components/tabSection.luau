@@ -42,14 +42,11 @@ function TabSection.new(al, am)
         Visible = false,
         Parent = al.tabList,
     })
-    b.padding = al:Create(
-        "UIPadding",
-        {
-            PaddingTop = UDim.new(0, if ak(al) then ai else 0),
-            PaddingBottom = UDim.new(0, aj),
-            Parent = b.main,
-        }
-    )
+    b.padding = al:Create("UIPadding", {
+        PaddingTop = UDim.new(0, if ak(al) then ai else 0),
+        PaddingBottom = UDim.new(0, aj),
+        Parent = b.main,
+    })
     al:Create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         Padding = UDim.new(0, 6),

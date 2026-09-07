@@ -111,16 +111,13 @@ function Statistic._buildFull(self)
         { Transparency = 1, Color = Color3.fromRGB(255, 255, 255), Parent = self.main },
         { Transparency = "ElementStrokeTransparency" }
     )
-    self.strokeGradient = k:Create(
-        "UIGradient",
-        {
-            Rotation = 2,
-            Offset = Vector2.new(0, 0.5),
-            Color = b.neutral.stroke,
-            Transparency = c,
-            Parent = self.stroke,
-        }
-    )
+    self.strokeGradient = k:Create("UIGradient", {
+        Rotation = 2,
+        Offset = Vector2.new(0, 0.5),
+        Color = b.neutral.stroke,
+        Transparency = c,
+        Parent = self.stroke,
+    })
     self.titleContainer = k:Create("Frame", {
         Size = UDim2.new(1, -40, 0, 32),
         Position = UDim2.fromOffset(20, 15),
@@ -233,16 +230,13 @@ function Statistic._buildCompact(self)
             Transparency = "ElementStrokeTransparency",
         }
     )
-    self.strokeGradient = k:Create(
-        "UIGradient",
-        {
-            Rotation = 2,
-            Offset = Vector2.new(0, 0.5),
-            Color = b.neutral.stroke,
-            Transparency = c,
-            Parent = self.stroke,
-        }
-    )
+    self.strokeGradient = k:Create("UIGradient", {
+        Rotation = 2,
+        Offset = Vector2.new(0, 0.5),
+        Color = b.neutral.stroke,
+        Transparency = c,
+        Parent = self.stroke,
+    })
     if l then
         k:Create("UIFlexItem", { FlexMode = Enum.UIFlexMode.Fill, Parent = self.main })
     end
@@ -262,16 +256,13 @@ function Statistic._buildCompact(self)
         Parent = self.main,
     })
     k:Create("UICorner", { Parent = self.card }, { CornerRadius = "ElementCornerRadius" })
-    self.mainGradient = k:Create(
-        "UIGradient",
-        {
-            Rotation = 2,
-            Offset = Vector2.new(0, 0.5),
-            Color = b.neutral.fill,
-            Transparency = c,
-            Parent = self.card,
-        }
-    )
+    self.mainGradient = k:Create("UIGradient", {
+        Rotation = 2,
+        Offset = Vector2.new(0, 0.5),
+        Color = b.neutral.fill,
+        Transparency = c,
+        Parent = self.card,
+    })
     k:Create(
         "UIPadding",
         { PaddingLeft = UDim.new(0, 15), PaddingRight = UDim.new(0, 15), Parent = self.card }

@@ -127,14 +127,11 @@ function ak.build(self, g)
         ClipsDescendants = true,
         Parent = self.sidebar,
     })
-    self:Create(
-        "UIPadding",
-        {
-            PaddingTop = UDim.new(0, g.railPadding),
-            PaddingBottom = UDim.new(0, g.railPadding),
-            Parent = self.tabList,
-        }
-    )
+    self:Create("UIPadding", {
+        PaddingTop = UDim.new(0, g.railPadding),
+        PaddingBottom = UDim.new(0, g.railPadding),
+        Parent = self.tabList,
+    })
     self.tabListLayout = self:Create("UIListLayout", {
         Padding = UDim.new(0, g.rowSpacing),
         FillDirection = Enum.FillDirection.Vertical,

@@ -82,6 +82,23 @@ that left is cleared and the callback fires so the feature drops its target. Liv
 lists are marked `ForgetState`, since a roster is not worth persisting between
 sessions.
 
+## Autoloading a configuration
+
+Rayfield's `autoLoad` only ever restores the default file, so a saved
+configuration had to be loaded by hand every session. **Load this configuration on
+start**, next to the configurations dropdown, pins the selected one: it is applied
+on every launch instead of whatever was last in use. The pin lives in Rayfield's
+settings file rather than in a configuration, so it is a property of the install,
+not of any one preset. Deleting or losing the pinned configuration clears the pin
+and falls back to the default file rather than starting with nothing applied.
+
+Note that with the pin set, ad-hoc changes still autosave to the default file but
+are discarded on the next launch, because the preset is reapplied. That is the
+point of pinning; save over the configuration to keep a change.
+
+This lives in `src/patch_rayfield.py` rather than as a hand edit, so regenerating
+the tree from the bundle cannot silently drop it. It is idempotent.
+
 ## Configs across updates
 
 Settings are keyed by `Category_Module` and `Category_Module_Setting`, so they
@@ -126,6 +143,7 @@ still be renamed; getting that backwards silently redirects the assignment to a
 global while its declaration is renamed, which is a bug that compiles and runs.
 The build fails if any rename is left half-applied.
 | `bundle.py` | re-bundles the tree into one loadable file |
+| `patch_rayfield.py` | additions to Rayfield itself, applied after `pass2.py` |
 | `build.py` | assembles Rayfield + adapter + feature code into `Script.luau` |
 
 `build.py` wraps the Rayfield bundle in an IIFE. Luau allows 200 locals per

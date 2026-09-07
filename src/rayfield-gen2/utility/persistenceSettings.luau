@@ -40,6 +40,7 @@ function aj.saveSettings(ak: SettingsWindow): boolean
         welcomeToast = ak.settings.welcomeToast,
         haptics = ak.settings.haptics,
         showProfile = ak.settings.showProfile,
+        autoloadConfig = ak.settings.autoloadConfig,
     }
     local c, d = pcall(variables.httpService.JSONEncode, variables.httpService, b)
     if not c then
@@ -110,6 +111,9 @@ function aj.loadSettings(al: SettingsWindow): boolean
     end
     if type(c.showProfile) == "boolean" then
         al.settings.showProfile = c.showProfile
+    end
+    if type(c.autoloadConfig) == "string" then
+        al.settings.autoloadConfig = c.autoloadConfig
     end
     return true
 end

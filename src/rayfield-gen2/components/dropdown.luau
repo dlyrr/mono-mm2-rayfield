@@ -523,14 +523,10 @@ function Dropdown.new(P, Q)
         variables.tweenService:Create(T.title, I, { TextColor3 = T.window.theme.ContentColor }):Play()
         variables.tweenService:Create(T.hoverOverlay, I, { BackgroundTransparency = 1 }):Play()
         variables.tweenService
-            :Create(
-                T.stroke,
-                I,
-                {
-                    Transparency = T.window.theme.ElementStrokeTransparency,
-                    Color = T.window.theme.ElementStroke,
-                }
-            )
+            :Create(T.stroke, I, {
+                Transparency = T.window.theme.ElementStrokeTransparency,
+                Color = T.window.theme.ElementStroke,
+            })
             :Play()
     end)
     if T.description then
@@ -701,16 +697,13 @@ function Dropdown._buildActions(self)
     if not self.multiSelect then
         return
     end
-    self.actions = self.window:Create(
-        "Frame",
-        {
-            Name = "Actions",
-            Size = UDim2.new(1, -12, 0, G),
-            BackgroundTransparency = 1,
-            LayoutOrder = 2,
-            Parent = self.panel,
-        }
-    )
+    self.actions = self.window:Create("Frame", {
+        Name = "Actions",
+        Size = UDim2.new(1, -12, 0, G),
+        BackgroundTransparency = 1,
+        LayoutOrder = 2,
+        Parent = self.panel,
+    })
     self.window:Create("UIListLayout", {
         Padding = UDim.new(0, 12),
         FillDirection = Enum.FillDirection.Horizontal,

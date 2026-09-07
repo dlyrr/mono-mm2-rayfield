@@ -246,16 +246,13 @@ function Slider._buildLabel(self)
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = self.container,
     })
-    self.titleContainer = self.window:Create(
-        "Frame",
-        {
-            Size = UDim2.new(1, 0, 0, 16),
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            ZIndex = 5,
-            Parent = self.container,
-        }
-    )
+    self.titleContainer = self.window:Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 16),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = 5,
+        Parent = self.container,
+    })
     self.window:Create("UIListLayout", {
         Padding = UDim.new(0, 5),
         FillDirection = Enum.FillDirection.Horizontal,

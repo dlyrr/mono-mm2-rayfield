@@ -51,17 +51,13 @@ function Divider.new(p, q)
 end
 
 function Divider._buildHalf(self, q)
-    local r = self.window:Create(
-        "Frame",
-        {
-            Size = UDim2.new(0, 0, 0, i),
-            BorderSizePixel = 0,
-            LayoutOrder = q,
-            BackgroundTransparency = 1,
-            Parent = self.main,
-        },
-        { BackgroundColor3 = "ContentColor" }
-    )
+    local r = self.window:Create("Frame", {
+        Size = UDim2.new(0, 0, 0, i),
+        BorderSizePixel = 0,
+        LayoutOrder = q,
+        BackgroundTransparency = 1,
+        Parent = self.main,
+    }, { BackgroundColor3 = "ContentColor" })
     self.window:Create("UIFlexItem", {
         FlexMode = Enum.UIFlexMode.Fill,
         Parent = r,

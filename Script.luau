@@ -2516,6 +2516,7 @@ local Rayfield = (function()
                 welcomeToast = ak.settings.welcomeToast,
                 haptics = ak.settings.haptics,
                 showProfile = ak.settings.showProfile,
+                autoloadConfig = ak.settings.autoloadConfig,
             }
             local c, d = pcall(variables.httpService.JSONEncode, variables.httpService, b)
             if not c then
@@ -2586,6 +2587,9 @@ local Rayfield = (function()
             end
             if type(c.showProfile) == "boolean" then
                 al.settings.showProfile = c.showProfile
+            end
+            if type(c.autoloadConfig) == "string" then
+                al.settings.autoloadConfig = c.autoloadConfig
             end
             return true
         end
@@ -13216,7 +13220,7 @@ local Rayfield = (function()
             })
             if next(self.configuration) ~= nil then
                 self.rfSettings:CreateSection({ name = "Configurations" })
-                local default, K, L = self:ListConfigs()[1]
+                local default, K, L, autoPin = self:ListConfigs()[1]
                 local function M()
                     local N = self:ListConfigs()
                     K:Refresh(N)
@@ -13235,6 +13239,24 @@ local Rayfield = (function()
                     placeholder = "No saved configurations",
                     callback = function(N)
                         default = N
+                        if autoPin then
+                            autoPin:Set(self.settings.autoloadConfig == N, true)
+                        end
+                    end,
+                })
+                autoPin = self.rfSettings:CreateToggle({
+                    name = "Load this configuration on start",
+                    description = [[Applies the selected configuration every time the script runs,]]
+                        .. [[ instead of restoring whatever was last in use.]],
+                    value = self.settings.autoloadConfig ~= nil and self.settings.autoloadConfig == default,
+                    forgetState = true,
+                    callback = function(on)
+                        if on and default and default ~= "" then
+                            self.settings.autoloadConfig = default
+                        else
+                            self.settings.autoloadConfig = nil
+                        end
+                        self:SaveSettings()
                     end,
                 })
                 L = self.rfSettings:CreateInput({
@@ -13302,6 +13324,10 @@ local Rayfield = (function()
                             return
                         end
                         if self:DeleteConfig(O) then
+                            if self.settings.autoloadConfig == O then
+                                self.settings.autoloadConfig = nil
+                                self:SaveSettings()
+                            end
                             M()
                             self:Toast({ title = locale.resolve("Deleted configuration"), subtitle = O })
                         else
@@ -13474,7 +13500,15 @@ local Rayfield = (function()
             self._revealing = true
             if self.configuration.autoLoad and not self._autoLoaded then
                 self._autoLoaded = true
-                local default, K = pcall(self.Load, self)
+                -- A pinned configuration wins over the default file. If it has been
+                -- deleted since, fall back rather than starting with nothing applied.
+                local pinned = self.settings.autoloadConfig
+                if pinned and not table.find(self:ListConfigs(), pinned) then
+                    pinned = nil
+                    self.settings.autoloadConfig = nil
+                    self:SaveSettings()
+                end
+                local default, K = pcall(self.Load, self, pinned)
                 if not default then
                     log.warn("Rayfield: Failed to load configuration - " .. tostring(K))
                 end
