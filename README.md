@@ -62,7 +62,9 @@ Clicking a toggle in the menu does not toast: you can already see it move.
 MonoUI builds these itself, so they are rebuilt on Rayfield elements:
 
 - **Server** — Place / Session / Live sections, with `Players`, `FPS`, `Ping` and
-  `Memory` driven by a heartbeat loop, plus uptime and a copy-Job-ID button.
+  `Memory` driven by a heartbeat loop, plus uptime, a copy-Job-ID button, and a
+  **Rejoin this server** button that reconnects to this exact instance by job id
+  rather than dropping you into a new one.
 - **Players** — a player dropdown that resyncs on join/leave, with a detail block
   (user ID, display name, account age, membership, locale, team, health, distance).
   `Menu.DetailExtra` is still honoured for game-specific rows.

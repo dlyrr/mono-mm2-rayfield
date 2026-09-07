@@ -14789,6 +14789,7 @@ local function MakeMonoUI(Rayfield)
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local Stats = game:GetService("Stats")
+    local TeleportService = game:GetService("TeleportService")
 
     local function copyToClipboard(text)
         local fn = (getgenv and getgenv().setclipboard) or setclipboard
@@ -14968,6 +14969,31 @@ local function MakeMonoUI(Rayfield)
             Callback = function()
                 if copyToClipboard(game.JobId) then
                     self.window:Toast({ Title = "Job ID copied" })
+                end
+            end,
+        })
+
+        tab:CreateButton({
+            Name = "Rejoin this server",
+            Description = "Reconnects to this exact server instance rather than a new one."
+                .. " Fails if it fills up or shuts down while you are reconnecting.",
+            Callback = function()
+                -- empty in Studio, and there is no instance to return to
+                if game.JobId == "" then
+                    self.window:Toast({
+                        Title = "Cannot rejoin",
+                        Subtitle = "this session has no job id",
+                    })
+                    return
+                end
+                self.window:Toast({ Title = "Rejoining", Subtitle = "same server" })
+                local ok, err = pcall(function()
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
+                end)
+                -- an async failure arrives on TeleportInitFailed, which the
+                -- feature code already reports; this catches the immediate throw
+                if not ok then
+                    self.window:Toast({ Title = "Rejoin failed", Subtitle = tostring(err):sub(1, 60) })
                 end
             end,
         })
