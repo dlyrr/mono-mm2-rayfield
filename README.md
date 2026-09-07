@@ -83,6 +83,12 @@ that produced it are in `src/`:
 | `bundle.py` | re-bundles the tree into one loadable file |
 | `build.py` | assembles Rayfield + adapter + feature code into `Script.luau` |
 
+`build.py` wraps the Rayfield bundle in an IIFE. Luau allows 200 locals per
+function, and a chunk is a function: the feature code alone declares ~170 at top
+level, so the bundle's own 78 would push the file past the limit and it would
+fail to compile with `Out of local registers`. Inside an IIFE the whole library
+costs one local. The build asserts on the count so this cannot regress.
+
 ## Credits
 
 Script and original UI by [Fleece](https://robloxscripts.com/user/Fleece).
