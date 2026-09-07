@@ -427,10 +427,11 @@ local function MakeMonoUI(Rayfield)
             settings = {},
         }
 
-        -- MonoUI shows Desc inline and Info in the drawer; Rayfield has one
-        -- description slot, so join them when both are present.
+        -- MonoUI shows Desc on the row and Info in the drawer; Rayfield has one
+        -- description slot. Info nearly always restates Desc before adding
+        -- detail, so joining them blindly prints the same sentence twice.
         local description = m.info or m.desc
-        if m.info and m.desc ~= "" then
+        if m.info and m.desc ~= "" and m.info:sub(1, #m.desc) ~= m.desc then
             description = m.desc .. "\n\n" .. m.info
         end
 
@@ -504,12 +505,18 @@ local function MakeMonoUI(Rayfield)
     function MonoUI:_setting(tab, m, cfg)
         local kind = cfg.Type or "Toggle"
         local title = cfg.Title or cfg.Text or kind
+        -- The flag stays keyed on the bare title so saved configs survive this.
         local flag = self:_claimFlag(m.category.name, m.name, title)
         local cb = cfg.Callback or noop
 
+        -- MonoUI hid settings in a per-module drawer, so a bare "Target" was
+        -- unambiguous. Here they sit in the same column as the modules, and four
+        -- teleport modules each own a "Target", so name the owner on the row.
+        local label = title .. " (" .. words(m.name) .. ")"
+
         if kind == "Slider" then
             return tab:CreateSlider({
-                Name = title,
+                Name = label,
                 Range = { cfg.Min or 0, cfg.Max or 100 },
                 Increment = cfg.Step or cfg.Increment or 1,
                 Value = cfg.Default or cfg.Min or 0,
@@ -526,7 +533,7 @@ local function MakeMonoUI(Rayfield)
             local dynamic = cfg.GetValues
             local values = cfg.Values or (dynamic and cfg.GetValues()) or {}
             local handle = tab:CreateDropdown({
-                Name = title,
+                Name = label,
                 Options = values,
                 Value = cfg.Default,
                 -- a live player list is not worth persisting between sessions
@@ -546,7 +553,7 @@ local function MakeMonoUI(Rayfield)
             return handle
         elseif kind == "Toggle" then
             return tab:CreateToggle({
-                Name = title,
+                Name = label,
                 Value = cfg.Default and true or false,
                 Flag = flag,
                 Callback = function(v)
@@ -555,7 +562,7 @@ local function MakeMonoUI(Rayfield)
             })
         elseif kind == "Keybind" then
             return tab:CreateKeybind({
-                Name = title,
+                Name = label,
                 Value = cfg.Default,
                 Flag = flag,
                 OnChanged = function(k)
@@ -564,7 +571,7 @@ local function MakeMonoUI(Rayfield)
             })
         elseif kind == "Button" then
             return tab:CreateButton({
-                Name = title,
+                Name = label,
                 Callback = function()
                     cb()
                 end,

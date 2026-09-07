@@ -30,7 +30,10 @@ The two libraries structure things differently:
 
 So a MonoUI **category becomes a tab**, and a module's settings sit directly
 beneath it rather than behind a drawer. Modules become toggles, or buttons when
-declared `Action`. `Desc` and `Info` merge into Rayfield's single description slot.
+declared `Action`. `Desc` and `Info` merge into Rayfield's single description
+slot, skipping the merge when `Info` already opens with `Desc`, which it usually
+does. A setting carries its owner on the row -- `Target (Fling Player)` -- because
+the drawer that used to make a bare `Target` unambiguous is gone.
 
 Two details that matter:
 
