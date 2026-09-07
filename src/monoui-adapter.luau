@@ -526,6 +526,13 @@ local function MakeMonoUI(Rayfield)
         })
     end
 
+    -- Pressing a bind gives no on-screen feedback on its own, and the menu is
+    -- usually closed at the time, so say what just happened. Only from a keybind:
+    -- clicking the toggle in the menu is its own feedback.
+    function MonoUI:_bindToast(m, state)
+        self.window:Toast({ Title = words(m.name), Subtitle = state, Duration = 1.5 })
+    end
+
     -- MonoUI puts a bindable chip on every module row. Rayfield rows have no such
     -- slot, and a keybind under all 49 toggles would bury the features, so the
     -- binds are collected onto one page. Built from Present() because that is the
@@ -560,12 +567,16 @@ local function MakeMonoUI(Rayfield)
                         if m.callback then
                             m.callback(true)
                         end
-                    elseif m.hold then
+                        self:_bindToast(m, "Triggered")
+                        return
+                    end
+                    if m.hold then
                         -- a Hold keybind reports true on press and false on release
                         m:Toggle(v == true)
                     else
                         m:Toggle()
                     end
+                    self:_bindToast(m, m.state and "On" or "Off")
                 end,
                 OnChanged = function(k)
                     m.bind = k

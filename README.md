@@ -53,6 +53,10 @@ key is down; an `Action` feature fires. Binds are saved with the rest of the con
 The page is built from `Present()`, the last call the feature code makes, because
 only then does every module exist.
 
+Pressing a bind raises a toast naming the feature and its new state, since the menu
+is usually closed at the time and there is otherwise no sign anything happened.
+Clicking a toggle in the menu does not toast: you can already see it move.
+
 ## Players and Server pages
 
 MonoUI builds these itself, so they are rebuilt on Rayfield elements:
