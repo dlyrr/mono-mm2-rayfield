@@ -33,10 +33,44 @@ local function MakeMonoUI(Rayfield)
         return (tostring(s):gsub("(%l)(%u)", "%1 %2"))
     end
 
+    -- Where a rejoin re-fetches the script from. Set MonoUI.RelaunchSource before
+    -- building the menu to point somewhere else.
+    local RELAUNCH_URL = "https://raw.githubusercontent.com/dlyrr/mono-mm2-rayfield/main/Script.luau"
+
     -- Rayfield derives a config flag from the element name, so two modules that
     -- each have a "Speed" slider would collide. Namespace every flag explicitly.
-    local function flagFor(...)
-        return (table.concat({ ... }, "_"):gsub("[^%w_]", ""))
+    --
+    -- Uniqueness matters beyond tidiness: Rayfield resolves a collision by
+    -- appending a number, and the number depends on the order controls were
+    -- created. An update that adds or reorders a module would renumber them, and
+    -- saved values would come back on the wrong control. _claimFlag records every
+    -- flag so Present() can catch a collision before it can do that.
+    function MonoUI:_claimFlag(...)
+        local flag = (table.concat({ ... }, "_"):gsub("[^%w_]", ""))
+        self._flags = self._flags or {}
+        self._flags[flag] = (self._flags[flag] or 0) + 1
+        return flag
+    end
+
+    function MonoUI:_verifyFlags()
+        local clashes = {}
+        for flag, count in self._flags or {} do
+            if count > 1 then
+                table.insert(clashes, flag .. " x" .. count)
+            end
+        end
+        if #clashes == 0 then
+            return true
+        end
+        table.sort(clashes)
+        self.window:Notify({
+            Title = "Config flags collide",
+            Content = "These share a config key, so saved values can land on the wrong control"
+                .. " and will shift again on the next update: "
+                .. table.concat(clashes, ", "),
+            Duration = 12,
+        })
+        return false
     end
 
     function MonoUI.new(cfg)
@@ -237,6 +271,26 @@ local function MakeMonoUI(Rayfield)
         self.pagePlayers = tab
     end
 
+    -- A teleport tears down every running script, so the menu would be gone on the
+    -- other side. Executors expose queue_on_teleport to hand a chunk to the next
+    -- place; names vary, so try the ones in circulation. Returns false when the
+    -- executor has none, and the caller says so rather than promising a reload.
+    function MonoUI:_queueRelaunch()
+        local env = (getgenv and getgenv()) or {}
+        local queue = env.queue_on_teleport
+            or env.queueonteleport
+            or queue_on_teleport
+            or queueonteleport
+            or (syn and syn.queue_on_teleport)
+            or (fluxus and fluxus.queue_on_teleport)
+        if typeof(queue) ~= "function" then
+            return false
+        end
+        local url = rawget(MonoUI, "RelaunchSource") or RELAUNCH_URL
+        local ok = pcall(queue, ('loadstring(game:HttpGet("%s"))()'):format(url))
+        return ok
+    end
+
     function MonoUI:_buildServerPage()
         local tab = self.window:CreateTab({ Name = "Server", CustomOrder = PAGE_ORDER.Server })
 
@@ -282,7 +336,11 @@ local function MakeMonoUI(Rayfield)
                     })
                     return
                 end
-                self.window:Toast({ Title = "Rejoining", Subtitle = "same server" })
+                local queued = self:_queueRelaunch()
+                self.window:Toast({
+                    Title = "Rejoining",
+                    Subtitle = queued and "script will reload" or "reload the script yourself",
+                })
                 local ok, err = pcall(function()
                     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
                 end)
@@ -391,7 +449,7 @@ local function MakeMonoUI(Rayfield)
                 Name = words(m.name),
                 Description = description,
                 Value = m.state,
-                Flag = flagFor(cat.name, m.name),
+                Flag = self:_claimFlag(cat.name, m.name),
                 Callback = function(v)
                     m.state = v
                     if m.callback then
@@ -446,7 +504,7 @@ local function MakeMonoUI(Rayfield)
     function MonoUI:_setting(tab, m, cfg)
         local kind = cfg.Type or "Toggle"
         local title = cfg.Title or cfg.Text or kind
-        local flag = flagFor(m.category.name, m.name, title)
+        local flag = self:_claimFlag(m.category.name, m.name, title)
         local cb = cfg.Callback or noop
 
         if kind == "Slider" then
@@ -587,7 +645,7 @@ local function MakeMonoUI(Rayfield)
                 Name = words(m.name),
                 Value = m.bind,
                 Hold = m.hold,
-                Flag = flagFor(m.category.name, m.name, "bind"),
+                Flag = self:_claimFlag(m.category.name, m.name, "bind"),
                 Callback = function(v)
                     if m.action then
                         if m.callback then
@@ -613,6 +671,7 @@ local function MakeMonoUI(Rayfield)
 
     function MonoUI:Present()
         self:_buildKeybindsPage()
+        self:_verifyFlags()
         self.window:Show()
     end
 

@@ -64,7 +64,8 @@ MonoUI builds these itself, so they are rebuilt on Rayfield elements:
 - **Server** — Place / Session / Live sections, with `Players`, `FPS`, `Ping` and
   `Memory` driven by a heartbeat loop, plus uptime, a copy-Job-ID button, and a
   **Rejoin this server** button that reconnects to this exact instance by job id
-  rather than dropping you into a new one.
+  rather than dropping you into a new one, queueing the script to load itself
+  again on the other side.
 - **Players** — a player dropdown that resyncs on join/leave, with a detail block
   (user ID, display name, account age, membership, locale, team, health, distance).
   `Menu.DetailExtra` is still honoured for game-specific rows.
@@ -77,6 +78,21 @@ connections instead. A selection that is still in the refreshed list is kept; on
 that left is cleared and the callback fires so the feature drops its target. Live
 lists are marked `ForgetState`, since a roster is not worth persisting between
 sessions.
+
+## Configs across updates
+
+Settings are keyed by `Category_Module` and `Category_Module_Setting`, so they
+survive an update as long as those names do not change. Rayfield keeps flags it
+does not recognise when it saves, so a feature that is renamed or removed upstream
+leaves its old value in the file rather than wiping it, and restoring is per-flag,
+so one bad value cannot take the rest down with it.
+
+The failure that would be silent is a collision. Rayfield resolves two controls
+claiming one key by appending a number, and that number depends on the order the
+controls were built, so an update that adds or reorders a module would renumber
+them and saved values would come back on the wrong control. Every key is claimed
+through `_claimFlag`, and `Present()` reports any duplicate rather than letting it
+quietly shuffle settings.
 
 ## Not carried over
 
