@@ -6,6 +6,18 @@
 --
 -- Rayfield Gen2 (c) 2026 Corridon Capital, MPL-2.0 - https://mozilla.org/MPL/2.0/
 
+print([==[
+
+ ███    ███  ██████  ███    ██  ██████
+ ████  ████ ██    ██ ████   ██ ██    ██
+ ██ ████ ██ ██    ██ ██ ██  ██ ██    ██
+ ██  ██  ██ ██    ██ ██  ██ ██ ██    ██
+ ██      ██  ██████  ██   ████  ██████
+
+            M A D E   B Y   X O C A T
+
+]==])
+
 --!nocheck
 -- Rayfield Gen2 v1.2.0 - deobfuscated single-file build
 -- Reconstructed from the darklua bundle at https://sirius.menu/gen2

@@ -4,6 +4,22 @@ import io, re, sys
 
 LOCAL_LIMIT = 200  # Luau's registers-per-function limit
 
+# Printed once on load, before anything else runs. Built from U+2588 alone, which
+# the Roblox console renders reliably; box-drawing glyphs do not always survive.
+BANNER = '''print([==[
+
+ \u2588\u2588\u2588    \u2588\u2588\u2588  \u2588\u2588\u2588\u2588\u2588\u2588  \u2588\u2588\u2588    \u2588\u2588  \u2588\u2588\u2588\u2588\u2588\u2588
+ \u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588 \u2588\u2588    \u2588\u2588 \u2588\u2588\u2588\u2588   \u2588\u2588 \u2588\u2588    \u2588\u2588
+ \u2588\u2588 \u2588\u2588\u2588\u2588 \u2588\u2588 \u2588\u2588    \u2588\u2588 \u2588\u2588 \u2588\u2588  \u2588\u2588 \u2588\u2588    \u2588\u2588
+ \u2588\u2588  \u2588\u2588  \u2588\u2588 \u2588\u2588    \u2588\u2588 \u2588\u2588  \u2588\u2588 \u2588\u2588 \u2588\u2588    \u2588\u2588
+ \u2588\u2588      \u2588\u2588  \u2588\u2588\u2588\u2588\u2588\u2588  \u2588\u2588   \u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588\u2588\u2588
+
+            M A D E   B Y   X O C A T
+
+]==])
+
+'''
+
 rf = io.open('C:/Users/santi/Downloads/rayfield-gen2-deobf.luau', encoding='utf-8').read().rstrip()
 shim = io.open('monoshim.luau', encoding='utf-8').read().rstrip()
 mono = io.open('mono.lua', encoding='utf-8').read().split('\n')
@@ -38,7 +54,7 @@ out = ('-- Mono MM2, running on Rayfield Gen2.\n--\n'
        '-- The bundled MonoUI library is replaced by the adapter below; the feature\n'
        '-- code is unmodified apart from its one library entry point.\n--\n'
        '-- Rayfield Gen2 (c) 2026 Corridon Capital, MPL-2.0 - https://mozilla.org/MPL/2.0/\n\n'
-       + rf_block + '\n-- ' + '=' * 70 + '\n' + shim
+       + BANNER + rf_block + '\n-- ' + '=' * 70 + '\n' + shim
        + '\n\n-- ' + '=' * 70 + '\n-- Mono MM2 feature code\n-- ' + '=' * 70 + '\n' + feat)
 
 
