@@ -51,6 +51,15 @@ MonoUI builds these itself, so they are rebuilt on Rayfield elements:
   (user ID, display name, account age, membership, locale, team, health, distance).
   `Menu.DetailExtra` is still honoured for game-specific rows.
 
+Every dropdown that lists players re-syncs on join and leave: the Players picker
+and all four teleport `Target` dropdowns. MonoUI re-evaluated `GetValues` each
+time its drawer opened, which Rayfield has no equivalent of, so the adapter
+registers those dropdowns against a single pair of `PlayerAdded`/`PlayerRemoving`
+connections instead. A selection that is still in the refreshed list is kept; one
+that left is cleared and the callback fires so the feature drops its target. Live
+lists are marked `ForgetState`, since a roster is not worth persisting between
+sessions.
+
 ## Not carried over
 
 - MonoUI's **Configs / Settings / Credits** pages — Rayfield ships its own.
@@ -59,8 +68,6 @@ MonoUI builds these itself, so they are rebuilt on Rayfield elements:
 - **Favorites**, and `Menu.onCloseRequest` — Rayfield's close button hides the
   window rather than exposing a hook, so the unload confirmation does not fire
   from it.
-- Dropdowns declared with `GetValues` are seeded once at build time; call
-  `:Refresh(list)` on the handle to repopulate.
 
 ## src/rayfield-gen2
 

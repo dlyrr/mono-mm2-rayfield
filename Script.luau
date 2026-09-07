@@ -14798,6 +14798,26 @@ local function MakeMonoUI(Rayfield)
         return false
     end
 
+    -- Anything that lists players re-syncs here on join/leave: the Players page
+    -- picker, and every `GetValues` dropdown the feature code declares (the
+    -- teleport modules each get one). Connections are bound once, on first use.
+    function MonoUI:_onPlayersChanged(fn)
+        if not self._playerWatchers then
+            self._playerWatchers = {}
+            local function resync()
+                -- deferred so GetPlayers() no longer includes a leaver
+                task.defer(function()
+                    for _, watcher in self._playerWatchers do
+                        pcall(watcher)
+                    end
+                end)
+            end
+            self.window:Connect(Players.PlayerAdded, resync)
+            self.window:Connect(Players.PlayerRemoving, resync)
+        end
+        table.insert(self._playerWatchers, fn)
+    end
+
     local function clock(seconds)
         seconds = math.floor(seconds)
         local h, m = math.floor(seconds / 3600), math.floor(seconds % 3600 / 60)
@@ -14911,13 +14931,9 @@ local function MakeMonoUI(Rayfield)
             end,
         })
 
-        local function resync()
+        self:_onPlayersChanged(function()
             picker:Refresh(names())
             render()
-        end
-        self.window:Connect(Players.PlayerAdded, resync)
-        self.window:Connect(Players.PlayerRemoving, function()
-            task.defer(resync)
         end)
 
         self.pagePlayers = tab
@@ -15132,19 +15148,30 @@ local function MakeMonoUI(Rayfield)
                 end,
             })
         elseif kind == "Dropdown" then
-            -- GetValues is evaluated lazily by MonoUI (e.g. the live player list);
-            -- Rayfield wants its options up front, so seed it here. The feature
-            -- code can call :Refresh(list) on the handle to repopulate.
-            local values = cfg.Values or (cfg.GetValues and cfg.GetValues()) or {}
-            return tab:CreateDropdown({
+            -- MonoUI re-evaluates GetValues every time its drawer opens; Rayfield
+            -- wants the options up front. Seed them, then re-sync on join/leave so
+            -- the teleport target lists stay current.
+            local dynamic = cfg.GetValues
+            local values = cfg.Values or (dynamic and cfg.GetValues()) or {}
+            local handle = tab:CreateDropdown({
                 Name = title,
                 Options = values,
                 Value = cfg.Default,
-                Flag = flag,
+                -- a live player list is not worth persisting between sessions
+                ForgetState = dynamic and true or nil,
+                Flag = (not dynamic) and flag or nil,
                 Callback = function(v)
                     cb(v)
                 end,
             })
+            if dynamic then
+                self:_onPlayersChanged(function()
+                    -- Refresh keeps the current selection when it is still in the
+                    -- list, and fires the callback when it is not.
+                    handle:Refresh(cfg.GetValues())
+                end)
+            end
+            return handle
         elseif kind == "Toggle" then
             return tab:CreateToggle({
                 Name = title,
