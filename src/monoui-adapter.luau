@@ -496,9 +496,14 @@ local function MakeMonoUI(Rayfield)
 
         function m:SetFavorite() end
 
+        -- Keep the created elements: a module sometimes needs to write back to
+        -- its own settings, and MonoUI's Setting only ever returned the module.
+        m.settingElements = {}
+
         function m:Setting(cfg)
             table.insert(self.settings, cfg)
-            self.ui:_setting(tab, self, cfg)
+            local element = self.ui:_setting(tab, self, cfg)
+            table.insert(self.settingElements, element)
             return self
         end
 

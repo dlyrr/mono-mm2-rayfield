@@ -221,7 +221,7 @@ local function espColor(role) if not flags.espRoleTags then return Mono.espCols.
 
     src = sub(
         '''    espBox=false,espChams=false,''',
-        '''    espBound=false,espTarget=false,espHealth=false,
+        '''    espBound=false,espTarget=false,espHealth=false,espOutline=false,
     espBox=false,espChams=false,''')
 
     # ---------------------------------------------------------------- 4 + 5 + 6
@@ -252,7 +252,7 @@ function Mono.ensureBound(plr)
     u.fill=create("Frame",{Name=rnd(),BackgroundColor3=Mono.espCols.Fill,BackgroundTransparency=0.88,
         BorderSizePixel=0,Visible=false,ZIndex=2,Parent=EspGui})
     u.fillCorner=create("UICorner",{CornerRadius=UDim.new(0,10),Parent=u.fill})
-    create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=0.72,Parent=u.fill})
+    u.stroke=create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=1,Parent=u.fill})
 
     -- vertical health bar, sitting just outside the left edge
     u.hp=create("Frame",{Name=rnd(),BackgroundColor3=Color3.fromRGB(220,70,70),BackgroundTransparency=0.1,
@@ -314,6 +314,7 @@ local tracerStore={}''')
         '''    local doBox,doSkel,doTracer,doBox3=flags.espBox,flags.espSkeleton,flags.espTracers,flags.espBox3D
     -- [mono-rayfield]
     local doBound,doTarget,doHealth=flags.espBound,flags.espTarget,flags.espHealth
+    local doOutline=flags.espOutline
     local doAny2=doBound or doTarget or doHealth
     if not doAny2 and next(Mono.boundStore) then for p in pairs(Mono.boundStore) do Mono.clearBound(p) end end''')
 
@@ -374,6 +375,8 @@ local tracerStore={}''')
                         u.fill.Size=UDim2.fromOffset(wid,hgt)
                         u.fill.BackgroundColor3=Mono.espCols.Fill
                         u.fillCorner.CornerRadius=UDim.new(0,r)
+                        u.stroke.Transparency=doOutline and 0.25 or 1
+                        u.stroke.Color=col
                         u.fill.Visible=true
                         local segs={}
                         local n=Mono.cornerArcs(segs,x1,by1,x2,by2,r)
@@ -449,28 +452,32 @@ local tracerStore={}''')
         '''    local m = Visuals:Module({ Name = "Nametag ESP", Desc = "Name, distance and round coins above each player", Callback = function(v) flags.espNames=v; if not v then pcall(Mono.setRobloxNames,false) end end, Info = "Name, distance and round coins above each player." })
 end''',
         '''    local m = Visuals:Module({ Name = "Nametag ESP", Desc = "Name, distance and round coins above each player", Callback = function(v) flags.espNames=v; if not v then pcall(Mono.setRobloxNames,false) end end, Info = "Name, distance and round coins above each player." })
-    Mono.mNametag=m -- [mono-rayfield] paired with Target Info below
-end
-do -- [mono-rayfield]
-    local m = Visuals:Module({ Name = "Bounding Box", Desc = "Rounded box with accent corners and a translucent fill",
+    Mono.mNametag=m -- [mono-rayfield] paired with Target Info, declared below
+end''')
+
+    # The new modules go in their own section rather than in the middle of
+    # Player ESP, and the colour pickers sit in a third since they govern every
+    # role-coloured visual, not just the box.
+    src = sub(
+        '''Visuals:Section("World & Render")''',
+        '''-- [mono-rayfield]
+Visuals:Section("Target Overlay")
+do
+    local m = Visuals:Module({ Name = "Bounding Box", Desc = "Rounded box with a translucent fill and accent corners",
         Callback = function(v) flags.espBound=v end,
-        Info = "A rounded box around each player: a faint translucent fill with the corners picked out in the role colour. Independent of Box ESP, which draws plain lines." })
-    m:Setting{ Type = "Colorpicker", Title = "Murderer", Default = Color3.fromRGB(255,80,80),
-        Callback = function(c) Mono.espCols.Murderer=c end }
-    m:Setting{ Type = "Colorpicker", Title = "Sheriff", Default = Color3.fromRGB(90,150,255),
-        Callback = function(c) Mono.espCols.Sheriff=c end }
-    m:Setting{ Type = "Colorpicker", Title = "Innocent", Default = Color3.fromRGB(95,225,125),
-        Callback = function(c) Mono.espCols.Innocent=c end }
-    m:Setting{ Type = "Colorpicker", Title = "Box fill", Default = Color3.fromRGB(214,218,228),
-        Callback = function(c) Mono.espCols.Fill=c end }
-    m:Setting{ Type = "Label", Wrap = true, Text = "These colours drive every visual that is coloured by role, not just this box." }
+        Info = "A rounded box around each player: a faint translucent fill with the corners picked out in the role colour. Separate from Box ESP, which draws plain lines, so you can run either look." })
 end
-do -- [mono-rayfield]
+do
+    local m = Visuals:Module({ Name = "Outlines", Desc = "Traces the full edge of the bounding box",
+        Callback = function(v) flags.espOutline=v end,
+        Info = "Draws the whole rounded edge of the bounding box in the role colour, rather than only the corners. Needs Bounding Box on, since it outlines that box." })
+end
+do
     local m = Visuals:Module({ Name = "Health Bar", Desc = "Health beside the box, or inside the target card",
         Callback = function(v) flags.espHealth=v end,
         Info = "A bar showing how much health a player has left. On its own it sits just outside the left edge of the box. With Target Info on it moves into the card instead, so you never get two of them." })
 end
-do -- [mono-rayfield]
+do
     local m = Visuals:Module({ Name = "Target Info", Desc = "Card under each player with name, weapon and distance",
         Callback = function(v)
             flags.espTarget=v
@@ -478,7 +485,31 @@ do -- [mono-rayfield]
         end,
         Info = "A card beneath each player showing their display name, username, held weapon and distance. Turning it on turns Nametag ESP off: the two show the same thing in different places and would overlap." })
     Mono.mTarget=m
-end''')
+end
+
+Visuals:Section("Colours")
+do
+    local KEYS={"Murderer","Sheriff","Innocent","Fill"}
+    local TITLES={"Murderer","Sheriff","Innocent","Box fill"}
+    local DEFAULTS={Color3.fromRGB(255,80,80),Color3.fromRGB(90,150,255),
+        Color3.fromRGB(95,225,125),Color3.fromRGB(214,218,228)}
+    local m
+    m = Visuals:Module({ Name = "Reset Colours", Desc = "Put the four colours below back to default", Action = true,
+        Callback = function()
+            for i,key in ipairs(KEYS) do
+                Mono.espCols[key]=DEFAULTS[i]
+                local el=m.settingElements and m.settingElements[i]
+                if el and el.Set then el:Set(DEFAULTS[i],true) end
+            end
+        end,
+        Info = "The four colours below drive every visual keyed to a role: boxes, corners, outlines, tracers, chams, nametags and the target card. Box fill applies to the bounding box interior only. This puts all four back to how they started." })
+    for i,key in ipairs(KEYS) do
+        m:Setting{ Type = "Colorpicker", Title = TITLES[i], Default = DEFAULTS[i],
+            Callback = function(c) Mono.espCols[key]=c end }
+    end
+end
+
+Visuals:Section("World & Render")''')
 
     # the pairing has to hold from the other side too
     src = sub(

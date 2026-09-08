@@ -15246,9 +15246,14 @@ local function MakeMonoUI(Rayfield)
 
         function m:SetFavorite() end
 
+        -- Keep the created elements: a module sometimes needs to write back to
+        -- its own settings, and MonoUI's Setting only ever returned the module.
+        m.settingElements = {}
+
         function m:Setting(cfg)
             table.insert(self.settings, cfg)
-            self.ui:_setting(tab, self, cfg)
+            local element = self.ui:_setting(tab, self, cfg)
+            table.insert(self.settingElements, element)
             return self
         end
 
@@ -15608,7 +15613,7 @@ local function create(class,props,children)
 end
 local flags={autoKill=false,autoFlingMurderer=false,autoFlingSheriff=false,knifeWalls=false,gunWalls=false,instantKnife=false,gunEsp=false,gunEspDist=false,autoGun=false,aimbot=false,silentAim=false,showFov=false,
     fly=false,flySpeed=60,noclip=false,infJump=false,unlockCam=false,
-    espBound=false,espTarget=false,espHealth=false,
+    espBound=false,espTarget=false,espHealth=false,espOutline=false,
     espBox=false,espChams=false,footsteps=false,footMine=false,espFill=false,espNames=false,espRoleTags=false,espSkeleton=false,killFeed=false,coinEsp=false,espTracers=false,espAvatar=false,espMaxDist=0,espTracerFrom="Bottom",espBox3D=false,
     fullbright=false,fpsBoost=false,autoCoins=false,murdererNotify=false,antiAfk=false,
     flingPower=10000,flingSeconds=1,trapEsp=false,antiTrap=false,antiFling=false}
@@ -17019,7 +17024,7 @@ function Mono.ensureBound(plr)
     u.fill=create("Frame",{Name=rnd(),BackgroundColor3=Mono.espCols.Fill,BackgroundTransparency=0.88,
         BorderSizePixel=0,Visible=false,ZIndex=2,Parent=EspGui})
     u.fillCorner=create("UICorner",{CornerRadius=UDim.new(0,10),Parent=u.fill})
-    create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=0.72,Parent=u.fill})
+    u.stroke=create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=1,Parent=u.fill})
 
     -- vertical health bar, sitting just outside the left edge
     u.hp=create("Frame",{Name=rnd(),BackgroundColor3=Color3.fromRGB(220,70,70),BackgroundTransparency=0.1,
@@ -17214,6 +17219,7 @@ bind(RunService.RenderStepped,function()
     local doBox,doSkel,doTracer,doBox3=flags.espBox,flags.espSkeleton,flags.espTracers,flags.espBox3D
     -- [mono-rayfield]
     local doBound,doTarget,doHealth=flags.espBound,flags.espTarget,flags.espHealth
+    local doOutline=flags.espOutline
     local doAny2=doBound or doTarget or doHealth
     if not doAny2 and next(Mono.boundStore) then for p in pairs(Mono.boundStore) do Mono.clearBound(p) end end
     if not doBox and next(boxStore) then for p in pairs(boxStore) do clearBox(p) end end
@@ -17345,6 +17351,8 @@ bind(RunService.RenderStepped,function()
                         u.fill.Size=UDim2.fromOffset(wid,hgt)
                         u.fill.BackgroundColor3=Mono.espCols.Fill
                         u.fillCorner.CornerRadius=UDim.new(0,r)
+                        u.stroke.Transparency=doOutline and 0.25 or 1
+                        u.stroke.Color=col
                         u.fill.Visible=true
                         local segs={}
                         local n=Mono.cornerArcs(segs,x1,by1,x2,by2,r)
@@ -18533,35 +18541,7 @@ Visuals:Section("Player ESP")
 do
     local m = Visuals:Module({ Name = "Nametag ESP", Desc = "Name, distance and round coins above each player", Callback = function(v) flags.espNames=v; if not v then pcall(Mono.setRobloxNames,false) end
             if v and Mono.mTarget and Mono.mTarget:Get() then Mono.mTarget:Toggle(false) end end, Info = "Name, distance and round coins above each player." })
-    Mono.mNametag=m -- [mono-rayfield] paired with Target Info below
-end
-do -- [mono-rayfield]
-    local m = Visuals:Module({ Name = "Bounding Box", Desc = "Rounded box with accent corners and a translucent fill",
-        Callback = function(v) flags.espBound=v end,
-        Info = "A rounded box around each player: a faint translucent fill with the corners picked out in the role colour. Independent of Box ESP, which draws plain lines." })
-    m:Setting{ Type = "Colorpicker", Title = "Murderer", Default = Color3.fromRGB(255,80,80),
-        Callback = function(c) Mono.espCols.Murderer=c end }
-    m:Setting{ Type = "Colorpicker", Title = "Sheriff", Default = Color3.fromRGB(90,150,255),
-        Callback = function(c) Mono.espCols.Sheriff=c end }
-    m:Setting{ Type = "Colorpicker", Title = "Innocent", Default = Color3.fromRGB(95,225,125),
-        Callback = function(c) Mono.espCols.Innocent=c end }
-    m:Setting{ Type = "Colorpicker", Title = "Box fill", Default = Color3.fromRGB(214,218,228),
-        Callback = function(c) Mono.espCols.Fill=c end }
-    m:Setting{ Type = "Label", Wrap = true, Text = "These colours drive every visual that is coloured by role, not just this box." }
-end
-do -- [mono-rayfield]
-    local m = Visuals:Module({ Name = "Health Bar", Desc = "Health beside the box, or inside the target card",
-        Callback = function(v) flags.espHealth=v end,
-        Info = "A bar showing how much health a player has left. On its own it sits just outside the left edge of the box. With Target Info on it moves into the card instead, so you never get two of them." })
-end
-do -- [mono-rayfield]
-    local m = Visuals:Module({ Name = "Target Info", Desc = "Card under each player with name, weapon and distance",
-        Callback = function(v)
-            flags.espTarget=v
-            if v and Mono.mNametag and Mono.mNametag:Get() then Mono.mNametag:Toggle(false) end
-        end,
-        Info = "A card beneath each player showing their display name, username, held weapon and distance. Turning it on turns Nametag ESP off: the two show the same thing in different places and would overlap." })
-    Mono.mTarget=m
+    Mono.mNametag=m -- [mono-rayfield] paired with Target Info, declared below
 end
 do
     local m = Visuals:Module({ Name = "Box ESP", Desc = "2D rectangle around each player that tracks their pose", Callback = function(v) flags.espBox=v end, Info = "2D rectangle around each player that tracks their pose." })
@@ -18710,6 +18690,55 @@ do
         Callback = function(v) FS.life = v end }
     m:Setting{ Type = "Toggle", Title = "Include My Own", Default = false,
         Callback = function(v) flags.footMine = v end }
+end
+
+-- [mono-rayfield]
+Visuals:Section("Target Overlay")
+do
+    local m = Visuals:Module({ Name = "Bounding Box", Desc = "Rounded box with a translucent fill and accent corners",
+        Callback = function(v) flags.espBound=v end,
+        Info = "A rounded box around each player: a faint translucent fill with the corners picked out in the role colour. Separate from Box ESP, which draws plain lines, so you can run either look." })
+end
+do
+    local m = Visuals:Module({ Name = "Outlines", Desc = "Traces the full edge of the bounding box",
+        Callback = function(v) flags.espOutline=v end,
+        Info = "Draws the whole rounded edge of the bounding box in the role colour, rather than only the corners. Needs Bounding Box on, since it outlines that box." })
+end
+do
+    local m = Visuals:Module({ Name = "Health Bar", Desc = "Health beside the box, or inside the target card",
+        Callback = function(v) flags.espHealth=v end,
+        Info = "A bar showing how much health a player has left. On its own it sits just outside the left edge of the box. With Target Info on it moves into the card instead, so you never get two of them." })
+end
+do
+    local m = Visuals:Module({ Name = "Target Info", Desc = "Card under each player with name, weapon and distance",
+        Callback = function(v)
+            flags.espTarget=v
+            if v and Mono.mNametag and Mono.mNametag:Get() then Mono.mNametag:Toggle(false) end
+        end,
+        Info = "A card beneath each player showing their display name, username, held weapon and distance. Turning it on turns Nametag ESP off: the two show the same thing in different places and would overlap." })
+    Mono.mTarget=m
+end
+
+Visuals:Section("Colours")
+do
+    local KEYS={"Murderer","Sheriff","Innocent","Fill"}
+    local TITLES={"Murderer","Sheriff","Innocent","Box fill"}
+    local DEFAULTS={Color3.fromRGB(255,80,80),Color3.fromRGB(90,150,255),
+        Color3.fromRGB(95,225,125),Color3.fromRGB(214,218,228)}
+    local m
+    m = Visuals:Module({ Name = "Reset Colours", Desc = "Put the four colours below back to default", Action = true,
+        Callback = function()
+            for i,key in ipairs(KEYS) do
+                Mono.espCols[key]=DEFAULTS[i]
+                local el=m.settingElements and m.settingElements[i]
+                if el and el.Set then el:Set(DEFAULTS[i],true) end
+            end
+        end,
+        Info = "The four colours below drive every visual keyed to a role: boxes, corners, outlines, tracers, chams, nametags and the target card. Box fill applies to the bounding box interior only. This puts all four back to how they started." })
+    for i,key in ipairs(KEYS) do
+        m:Setting{ Type = "Colorpicker", Title = TITLES[i], Default = DEFAULTS[i],
+            Callback = function(c) Mono.espCols[key]=c end }
+    end
 end
 
 Visuals:Section("World & Render")

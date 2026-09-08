@@ -113,9 +113,22 @@ Target Info is on so you never get two.
 distance, and the health bar. Turning it on turns Nametag ESP off and vice versa,
 since they show the same thing in different places.
 
+**Outlines** — traces the whole rounded edge of the bounding box in the role
+colour, rather than only the corners.
+
 **Colours** — pickers for murderer, sheriff, innocent and the box fill, replacing
 the hardcoded red/blue/green. They drive every role-coloured visual, not just the
-box.
+box, and **Reset Colours** puts all four back.
+
+The Visuals tab is now four sections rather than a flat list, with the new modules
+in their own group instead of interleaved with the existing ESP:
+
+| | |
+| --- | --- |
+| Player ESP | nametags, boxes, chams, tracers, skeleton, footsteps |
+| Target Overlay | Bounding Box, Outlines, Health Bar, Target Info |
+| Colours | Reset Colours, and the four pickers |
+| World & Render | coins, traps, kill feed, fullbright, FPS boost, FOV |
 
 Two bugs fixed along the way:
 
