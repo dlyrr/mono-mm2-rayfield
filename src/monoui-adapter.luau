@@ -88,6 +88,11 @@ local function MakeMonoUI(Rayfield)
             Configuration = { AutoSave = true, AutoLoad = true, FileName = title },
         })
 
+        -- The feature code reads Window.gui to learn which screen area the menu
+        -- occupies, so ESP does not draw over it. MonoUI exposed its own
+        -- ScreenGui here; without it every rect check silently passed.
+        self.gui = self.window.screenGui
+
         self.categories, self.tabs, self.allModules = {}, {}, {}
         self.uiSettings = {} -- the feature code table.inserts into this directly
         self.tourSteps = {}
@@ -567,6 +572,15 @@ local function MakeMonoUI(Rayfield)
                 Flag = flag,
                 OnChanged = function(k)
                     cb(k)
+                end,
+            })
+        elseif kind == "Colorpicker" or kind == "ColorPicker" or kind == "Color" then
+            return tab:CreateColorPicker({
+                Name = label,
+                Color = cfg.Default or cfg.Value,
+                Flag = flag,
+                Callback = function(c)
+                    cb(c)
                 end,
             })
         elseif kind == "Button" then

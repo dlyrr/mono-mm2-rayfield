@@ -101,20 +101,36 @@ the tree from the bundle cannot silently drop it. It is idempotent.
 
 ## ESP changes
 
-The box was the screen-space bounding box of all eight projected corners of the
-character's 3D bounds, so it included the box's *depth*: the near face projects
-wider than the far one, by a margin that shifts with distance and with how the
-character is turned. The box visibly breathed wider and narrower as you moved.
-Height does not suffer from that, since a character stays upright, so the width is
-now derived from the height using the character's real world proportions.
+**Bounding Box** — a rounded translucent fill with the corners picked out in the
+role colour, alongside the original line-drawing Box ESP rather than replacing it.
+The fill is a GUI frame, since the Drawing library cannot round or fill; the
+corners stay Drawing arcs so they sit above everything.
 
-Boxes are drawn as rounded rectangles: four straight edges plus four three-segment
-corner arcs, sixteen lines in total, with the radius scaled to the box.
+**Health Bar** — a bar beside the box on its own, which moves inside the card when
+Target Info is on so you never get two.
 
-Nametag cards are more translucent, with a softer gradient and a blurred `UIShadow`
-halo. Roblox has no general per-element backdrop blur; the code looks for a glass
-instance at runtime and uses one if the client has it, otherwise it settles for the
-frosted look. No current client tested has one.
+**Target Info** — a card under each player: display name, username, held weapon,
+distance, and the health bar. Turning it on turns Nametag ESP off and vice versa,
+since they show the same thing in different places.
+
+**Colours** — pickers for murderer, sheriff, innocent and the box fill, replacing
+the hardcoded red/blue/green. They drive every role-coloured visual, not just the
+box.
+
+Two bugs fixed along the way:
+
+*Boxes changed width with distance.* The box was the screen-space bounding box of
+all eight projected corners of the character's 3D bounds, so it carried the depth
+of that box: the near face projects wider than the far one by a margin that moves
+with distance and with how the character is turned. Width now comes from the height,
+which is not affected, scaled by the box's extent projected onto the camera's right
+axis. That is the true silhouette width, so it is neither depth-inflated nor the
+worst case over all rotations.
+
+*Boxes could cover the screen.* A player straddling the camera plane projects to a
+rect thousands of pixels across. Line boxes shrugged that off; a filled one paints
+the whole screen. The bounding box now needs every corner in front of the camera
+and a rect that could plausibly be a person.
 
 ## Configs across updates
 
