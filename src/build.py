@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Assemble Rayfield Gen2 + the MonoUI adapter + the MM2 feature code into one file."""
-import io, re, sys
+import io, os, re, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # run from any cwd
+import patch_mono
 
 LOCAL_LIMIT = 200  # Luau's registers-per-function limit
 
@@ -29,6 +31,7 @@ feat = '\n'.join(mono[3734:])
 old = 'local MonoUI=loadstring(MONOUI_SOURCE)()'
 assert old in feat, 'library entry point not found'
 feat = feat.replace(old, 'local MonoUI = MakeMonoUI(Rayfield)')
+feat = patch_mono.apply(feat)   # ESP fixes, see patch_mono.py
 feat = feat.replace('if typeof(loadstring)~="function" then\n'
                     '    return error("[MONO] Your executor has no loadstring, which the UI library needs.",0)',
                     'if false then\n    return error("",0)')

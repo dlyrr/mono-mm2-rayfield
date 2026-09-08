@@ -99,6 +99,23 @@ point of pinning; save over the configuration to keep a change.
 This lives in `src/patch_rayfield.py` rather than as a hand edit, so regenerating
 the tree from the bundle cannot silently drop it. It is idempotent.
 
+## ESP changes
+
+The box was the screen-space bounding box of all eight projected corners of the
+character's 3D bounds, so it included the box's *depth*: the near face projects
+wider than the far one, by a margin that shifts with distance and with how the
+character is turned. The box visibly breathed wider and narrower as you moved.
+Height does not suffer from that, since a character stays upright, so the width is
+now derived from the height using the character's real world proportions.
+
+Boxes are drawn as rounded rectangles: four straight edges plus four three-segment
+corner arcs, sixteen lines in total, with the radius scaled to the box.
+
+Nametag cards are more translucent, with a softer gradient and a blurred `UIShadow`
+halo. Roblox has no general per-element backdrop blur; the code looks for a glass
+instance at runtime and uses one if the client has it, otherwise it settles for the
+frosted look. No current client tested has one.
+
 ## Configs across updates
 
 Settings are keyed by `Category_Module` and `Category_Module_Setting`, so they
@@ -144,6 +161,7 @@ global while its declaration is renamed, which is a bug that compiles and runs.
 The build fails if any rename is left half-applied.
 | `bundle.py` | re-bundles the tree into one loadable file |
 | `patch_rayfield.py` | additions to Rayfield itself, applied after `pass2.py` |
+| `patch_mono.py` | ESP changes to the feature code, applied at build time |
 | `build.py` | assembles Rayfield + adapter + feature code into `Script.luau` |
 
 `build.py` wraps the Rayfield bundle in an IIFE. Luau allows 200 locals per
