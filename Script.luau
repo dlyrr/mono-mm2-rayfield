@@ -16957,7 +16957,7 @@ function Mono.arcInto(segs,n,cx,cy,r,a0,k)
     return n
 end
 
-function Mono.boxRadius(w,h) return math.clamp(math.min(w,h)*0.32,4,34) end
+function Mono.boxRadius(w,h) return math.clamp(math.min(w,h)*0.20,3,18) end
 
 -- just the four corner arcs, for the bounding box look
 function Mono.cornerArcs(segs,x1,y1,x2,y2,r)
@@ -17014,7 +17014,7 @@ function Mono.ensureBound(plr)
     local u=Mono.boundStore[plr]
     if u then return u end
     u={arcs={}}
-    for i=1,4*Mono.BOUND_ARC_SEGS do u.arcs[i]=Mono.newLine(3) end
+    for i=1,4*Mono.BOUND_ARC_SEGS do u.arcs[i]=Mono.newLine(2) end
 
     u.fill=create("Frame",{Name=rnd(),BackgroundColor3=Mono.espCols.Fill,BackgroundTransparency=0.88,
         BorderSizePixel=0,Visible=false,ZIndex=2,Parent=EspGui})
