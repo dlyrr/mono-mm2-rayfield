@@ -16778,16 +16778,15 @@ local function rectBlocked(x1,y1,x2,y2)
     return false
 end
 -- [mono-rayfield] real backdrop blur where the client has it
-local GLASS_CLASS
 for _,cls in ipairs({"UIGlassEffect","UIBlur","UIBlurEffect"}) do
     local ok=pcall(function() Instance.new(cls):Destroy() end)
-    if ok then GLASS_CLASS=cls break end
+    if ok then Mono.GLASS_CLASS=cls break end
 end
 
-local function frost(card)
-    if GLASS_CLASS then
+function Mono.frost(card)
+    if Mono.GLASS_CLASS then
         pcall(function()
-            local g=Instance.new(GLASS_CLASS)
+            local g=Instance.new(Mono.GLASS_CLASS)
             g.Parent=card
         end)
     end
@@ -16808,7 +16807,7 @@ local function ensureEsp(plr) if espStore[plr] then return espStore[plr] end
              Transparency=NumberSequence.new({
                  NumberSequenceKeypoint.new(0,0.30),
                  NumberSequenceKeypoint.new(1,0.55)})})})
-    frost(e.card) -- [mono-rayfield]
+    Mono.frost(e.card) -- [mono-rayfield]
     e.edge=create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=0.55,
         ApplyStrokeMode=Enum.ApplyStrokeMode.Border,Parent=e.card})
     pcall(function()
@@ -16938,16 +16937,18 @@ local function clearBox(plr)
     if b then for _,l in ipairs(b) do Mono.dropDraw(l) end; boxStore[plr]=nil end
 end
 -- [mono-rayfield] rounded box: 4 straight edges + 4 corner arcs
-local BOX_ARC_SEGS=3
-local BOX_SEG_COUNT=4+4*BOX_ARC_SEGS
-local HALF_PI=math.pi*0.5
+Mono.BOX_ARC_SEGS=3
+Mono.BOX_SEG_COUNT=4+4*Mono.BOX_ARC_SEGS
+Mono.HALF_PI=math.pi*0.5
 
 -- Screen space has Y running downward, so these angles sweep clockwise on
 -- screen even though they read counter-clockwise as maths.
-local function arcInto(segs,n,cx,cy,r,a0)
-    local step=HALF_PI/BOX_ARC_SEGS
+Mono.BOUND_ARC_SEGS=7 -- the bounding box corners are large, so they need more
+function Mono.arcInto(segs,n,cx,cy,r,a0,k)
+    k=k or Mono.BOX_ARC_SEGS
+    local step=Mono.HALF_PI/k
     local px,py=cx+math.cos(a0)*r,cy+math.sin(a0)*r
-    for i=1,BOX_ARC_SEGS do
+    for i=1,k do
         local a=a0+step*i
         local nx,ny=cx+math.cos(a)*r,cy+math.sin(a)*r
         n=n+1; segs[n]={Vector2.new(px,py),Vector2.new(nx,ny)}
@@ -16956,30 +16957,31 @@ local function arcInto(segs,n,cx,cy,r,a0)
     return n
 end
 
-local function boxRadius(w,h) return math.clamp(math.min(w,h)*0.28,3,26) end
+function Mono.boxRadius(w,h) return math.clamp(math.min(w,h)*0.32,4,34) end
 
 -- just the four corner arcs, for the bounding box look
-local function cornerArcs(segs,x1,y1,x2,y2,r)
+function Mono.cornerArcs(segs,x1,y1,x2,y2,r)
+    local k=Mono.BOUND_ARC_SEGS
     local n=0
-    n=arcInto(segs,n,x1+r,y1+r,r,math.pi)
-    n=arcInto(segs,n,x2-r,y1+r,r,math.pi*1.5)
-    n=arcInto(segs,n,x2-r,y2-r,r,0)
-    n=arcInto(segs,n,x1+r,y2-r,r,HALF_PI)
+    n=Mono.arcInto(segs,n,x1+r,y1+r,r,math.pi,k)
+    n=Mono.arcInto(segs,n,x2-r,y1+r,r,math.pi*1.5,k)
+    n=Mono.arcInto(segs,n,x2-r,y2-r,r,0,k)
+    n=Mono.arcInto(segs,n,x1+r,y2-r,r,Mono.HALF_PI,k)
     return n
 end
 
-local function roundedRect(segs,x1,y1,x2,y2)
+function Mono.roundedRect(segs,x1,y1,x2,y2)
     local w,h=x2-x1,y2-y1
-    local r=boxRadius(w,h)
+    local r=Mono.boxRadius(w,h)
     local n=0
     n=n+1; segs[n]={Vector2.new(x1+r,y1),Vector2.new(x2-r,y1)}
     n=n+1; segs[n]={Vector2.new(x2,y1+r),Vector2.new(x2,y2-r)}
     n=n+1; segs[n]={Vector2.new(x2-r,y2),Vector2.new(x1+r,y2)}
     n=n+1; segs[n]={Vector2.new(x1,y2-r),Vector2.new(x1,y1+r)}
-    n=arcInto(segs,n,x1+r,y1+r,r,math.pi)
-    n=arcInto(segs,n,x2-r,y1+r,r,math.pi*1.5)
-    n=arcInto(segs,n,x2-r,y2-r,r,0)
-    n=arcInto(segs,n,x1+r,y2-r,r,HALF_PI)
+    n=Mono.arcInto(segs,n,x1+r,y1+r,r,math.pi)
+    n=Mono.arcInto(segs,n,x2-r,y1+r,r,math.pi*1.5)
+    n=Mono.arcInto(segs,n,x2-r,y2-r,r,0)
+    n=Mono.arcInto(segs,n,x1+r,y2-r,r,Mono.HALF_PI)
     return n
 end
 
@@ -16987,7 +16989,7 @@ local function ensureBox(plr)
     local b=boxStore[plr]
     if b then return b end
     b={}
-    for i=1,BOX_SEG_COUNT do
+    for i=1,Mono.BOX_SEG_COUNT do
         b[i]=Mono.newLine(1)
     end
     boxStore[plr]=b; return b
@@ -16996,28 +16998,28 @@ end
 -- The fill is a GUI Frame so it can have a rounded translucent interior, which
 -- the Drawing library cannot do; the accent corners stay Drawing arcs so they
 -- render above everything, as the rest of the ESP does.
-local boundStore={}
+Mono.boundStore={}
 
-local function clearBound(plr)
-    local u=boundStore[plr]
+function Mono.clearBound(plr)
+    local u=Mono.boundStore[plr]
     if not u then return end
     for _,l in ipairs(u.arcs) do Mono.dropDraw(l) end
     pcall(function() u.fill:Destroy() end)
     pcall(function() u.hp:Destroy() end)
     pcall(function() u.card:Destroy() end)
-    boundStore[plr]=nil
+    Mono.boundStore[plr]=nil
 end
 
-local function ensureBound(plr)
-    local u=boundStore[plr]
+function Mono.ensureBound(plr)
+    local u=Mono.boundStore[plr]
     if u then return u end
     u={arcs={}}
-    for i=1,4*BOX_ARC_SEGS do u.arcs[i]=Mono.newLine(3) end
+    for i=1,4*Mono.BOUND_ARC_SEGS do u.arcs[i]=Mono.newLine(3) end
 
     u.fill=create("Frame",{Name=rnd(),BackgroundColor3=Mono.espCols.Fill,BackgroundTransparency=0.88,
         BorderSizePixel=0,Visible=false,ZIndex=2,Parent=EspGui})
     u.fillCorner=create("UICorner",{CornerRadius=UDim.new(0,10),Parent=u.fill})
-    create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=0.86,Parent=u.fill})
+    create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=0.72,Parent=u.fill})
 
     -- vertical health bar, sitting just outside the left edge
     u.hp=create("Frame",{Name=rnd(),BackgroundColor3=Color3.fromRGB(220,70,70),BackgroundTransparency=0.1,
@@ -17033,7 +17035,7 @@ local function ensureBound(plr)
         BorderSizePixel=0,Visible=false,ZIndex=5,Parent=EspGui},
         {create("UICorner",{CornerRadius=UDim.new(0,10)})})
     create("UIStroke",{Color=Color3.fromRGB(255,255,255),Thickness=1,Transparency=0.8,Parent=u.card})
-    frost(u.card)
+    Mono.frost(u.card)
     pcall(function()
         local s=Instance.new("UIShadow")
         s.BlurRadius=UDim.new(0,16); s.Color=Color3.fromRGB(0,0,0)
@@ -17057,16 +17059,16 @@ local function ensureBound(plr)
         BackgroundColor3=Color3.fromRGB(85,220,110),BorderSizePixel=0,ZIndex=7,Parent=u.cardHp},
         {create("UICorner",{CornerRadius=UDim.new(1,0)})})
 
-    boundStore[plr]=u; return u
+    Mono.boundStore[plr]=u; return u
 end
 
-local function healthOf(ch)
+function Mono.healthOf(ch)
     local hum=ch and ch:FindFirstChildOfClass("Humanoid")
     if not hum or hum.MaxHealth<=0 then return nil end
     return math.clamp(hum.Health/hum.MaxHealth,0,1)
 end
 
-local function heldTool(ch)
+function Mono.heldTool(ch)
     local t=ch and ch:FindFirstChildOfClass("Tool")
     return t and t.Name or "None"
 end
@@ -17213,7 +17215,7 @@ bind(RunService.RenderStepped,function()
     -- [mono-rayfield]
     local doBound,doTarget,doHealth=flags.espBound,flags.espTarget,flags.espHealth
     local doAny2=doBound or doTarget or doHealth
-    if not doAny2 and next(boundStore) then for p in pairs(boundStore) do clearBound(p) end end
+    if not doAny2 and next(Mono.boundStore) then for p in pairs(Mono.boundStore) do Mono.clearBound(p) end end
     if not doBox and next(boxStore) then for p in pairs(boxStore) do clearBox(p) end end
     if not doSkel and next(skelStore) then for p in pairs(skelStore) do clearSkel(p) end end
     if not doTracer and next(tracerStore) then for p in pairs(tracerStore) do clearTracer(p) end end
@@ -17226,6 +17228,13 @@ bind(RunService.RenderStepped,function()
     local tOrigin=doTracer and tracerOrigin() or nil
     for _,plr in ipairs(Mono.plrs) do if plr~=LocalPlayer then
         local ch,_,cullRoot=Mono.hasBody(plr)
+        if not ch then -- [mono-rayfield] no body: hide rather than leave stale
+            local hu=Mono.boundStore[plr]
+            if hu then
+                for i=1,#hu.arcs do hu.arcs[i].Visible=false end
+                hu.fill.Visible=false; hu.hp.Visible=false; hu.card.Visible=false
+            end
+        end
         if ch then
             if cullRoot and (cullRoot.Position-camPos):Dot(camLook)<=0 then
                 local hb=boxStore[plr]
@@ -17238,7 +17247,7 @@ bind(RunService.RenderStepped,function()
                 if hs then
                     for i=1,#hs.lines do local l=hs.lines[i]; if l then l.Visible=false end end
                 end
-                local hu=boundStore[plr] -- [mono-rayfield]
+                local hu=Mono.boundStore[plr] -- [mono-rayfield]
                 if hu then
                     for i=1,#hu.arcs do hu.arcs[i].Visible=false end
                     hu.fill.Visible=false; hu.hp.Visible=false; hu.card.Visible=false
@@ -17297,7 +17306,7 @@ bind(RunService.RenderStepped,function()
                     local hgt=by2-by1
                     local wid=hgt*boxAspect
                     local segs={}
-                    local n=roundedRect(segs,cx-wid*0.5,by1,cx+wid*0.5,by2)
+                    local n=Mono.roundedRect(segs,cx-wid*0.5,by1,cx+wid*0.5,by2)
                     for i=1,n do
                         local seg,l=segs[i],b[i]
                         if l then l.From,l.To,l.Color,l.Visible=seg[1],seg[2],col,true end
@@ -17308,7 +17317,7 @@ bind(RunService.RenderStepped,function()
                 end
             end
             if doAny2 then -- [mono-rayfield]
-                local u=ensureBound(plr)
+                local u=Mono.ensureBound(plr)
                 local cx=(bx1 or 0)+(bx2 or 0)
                 cx=cx*0.5
                 local hgt=(by2 or 0)-(by1 or 0)
@@ -17325,16 +17334,20 @@ bind(RunService.RenderStepped,function()
                     and by1>-vp.Y and by2<vp.Y*2
                 if sane then
                     local x1,x2=cx-wid*0.5,cx+wid*0.5
-                    local r=boxRadius(wid,hgt)
+                    local r=Mono.boxRadius(wid,hgt)
+                    -- Drawing draws in screen coords, but EspGui has
+                    -- IgnoreGuiInset=false, so a frame given the same number
+                    -- lands one topbar lower. Shift the frames, not the arcs.
+                    local gi=Mono.guiIns or 0
 
                     if doBound then
-                        u.fill.Position=UDim2.fromOffset(x1,by1)
+                        u.fill.Position=UDim2.fromOffset(x1,by1-gi)
                         u.fill.Size=UDim2.fromOffset(wid,hgt)
                         u.fill.BackgroundColor3=Mono.espCols.Fill
                         u.fillCorner.CornerRadius=UDim.new(0,r)
                         u.fill.Visible=true
                         local segs={}
-                        local n=cornerArcs(segs,x1,by1,x2,by2,r)
+                        local n=Mono.cornerArcs(segs,x1,by1,x2,by2,r)
                         for i=1,n do
                             local l=u.arcs[i]
                             if l then l.From,l.To,l.Color,l.Visible=segs[i][1],segs[i][2],col,true end
@@ -17345,12 +17358,12 @@ bind(RunService.RenderStepped,function()
                         for i=1,#u.arcs do u.arcs[i].Visible=false end
                     end
 
-                    local frac=healthOf(ch)
+                    local frac=Mono.healthOf(ch)
 
                     -- with the card up the bar lives inside it, so the vertical
                     -- one beside the box would be a duplicate
                     if doHealth and frac and not doTarget then
-                        u.hp.Position=UDim2.fromOffset(x1-9,by1)
+                        u.hp.Position=UDim2.fromOffset(x1-9,by1-gi)
                         u.hp.Size=UDim2.fromOffset(4,hgt)
                         u.hpFill.Size=UDim2.fromScale(1,frac)
                         u.hp.Visible=true
@@ -17364,7 +17377,7 @@ bind(RunService.RenderStepped,function()
                         local chh=showHp and 58 or 44
                         local cardX=cx-cw*0.5
                         local cardY=by2-8
-                        u.card.Position=UDim2.fromOffset(cardX,cardY)
+                        u.card.Position=UDim2.fromOffset(cardX,cardY-gi)
                         u.card.Size=UDim2.fromOffset(cw,chh)
                         u.nameLbl.Position=UDim2.fromOffset(12,8)
                         u.nameLbl.Size=UDim2.fromOffset(cw*0.55,15)
@@ -17379,7 +17392,7 @@ bind(RunService.RenderStepped,function()
                         u.nameLbl.Text=dsp
                         u.nameLbl.TextColor3=col
                         u.userLbl.Text="@"..plr.Name
-                        u.weapLbl.Text=heldTool(ch)
+                        u.weapLbl.Text=Mono.heldTool(ch)
                         local ref=cullRoot or (ch and ch:FindFirstChild("HumanoidRootPart"))
                         u.distLbl.Text=ref and (math.floor((ref.Position-camPos).Magnitude+0.5).."m") or "-"
 
@@ -17475,7 +17488,7 @@ bind(RunService.RenderStepped,function()
         end
     end end
 end)
-bind(Players.PlayerRemoving,function(plr) clearEsp(plr); clearSkel(plr); clearBox(plr); clearTracer(plr); clearBox3(plr) end)
+bind(Players.PlayerRemoving,function(plr) clearEsp(plr); clearSkel(plr); clearBox(plr); clearTracer(plr); clearBox3(plr); Mono.clearBound(plr) end) -- [mono-rayfield]
 
 local coinContainerRef
 local function getCoinContainer()

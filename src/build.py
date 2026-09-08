@@ -4,7 +4,12 @@ import io, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # run from any cwd
 import patch_mono
 
-LOCAL_LIMIT = 200  # Luau's registers-per-function limit
+# Luau allows 200 registers per function, and a chunk is a function. The count
+# below is a lower bound -- it reads one line at a time, so a declaration split
+# across lines is undercounted. Calibrated against reality: a build this counted
+# at 187 failed to load, one at 172 runs, so the ceiling here is deliberately
+# short of 200.
+LOCAL_LIMIT = 180
 
 # Printed once on load, before anything else runs. Built from U+2588 alone, which
 # the Roblox console renders reliably; box-drawing glyphs do not always survive.
@@ -79,8 +84,8 @@ def toplevel_locals(text):
 
 n = len(toplevel_locals(out))
 if n >= LOCAL_LIMIT:
-    raise SystemExit('BUILD FAILED: %d top-level locals, Luau allows %d. '
-                     'Wrap another section in a do...end or an IIFE.' % (n, LOCAL_LIMIT))
+    raise SystemExit('BUILD FAILED: %d top-level locals, ceiling %d. Hang new helpers off an '
+                     'existing table (Mono.x) rather than declaring more locals.' % (n, LOCAL_LIMIT))
 
 io.open('mono-rayfield.luau', 'w', encoding='utf-8').write(out)
 
